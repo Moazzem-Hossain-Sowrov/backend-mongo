@@ -1,6 +1,9 @@
+
+// mongodb connection 
 const {
   MongoClient,
-  ServerApiVersion
+  ServerApiVersion,
+  ObjectId
 } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
@@ -48,6 +51,16 @@ async function run() {
     app.get('/services', async (req, res) =>{
       const result = await petServices.find().toArray();
       res.send(result)
+    })
+
+    app.get('/services/:id', async(req, res) =>{
+      const id = req.params
+      console.log(id);
+
+      const query = {_id: new ObjectId(id)}
+      const result = await petServices.findOne(query)
+      res.send(result)
+      
     })
 
 
