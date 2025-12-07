@@ -1,22 +1,20 @@
 import dotenv from 'dotenv';
 dotenv.config();
 // mongodb connection 
-import { MongoClient, ServerApiVersion, ObjectId } from 'mongodb';
+import {
+  MongoClient,
+  ServerApiVersion,
+  ObjectId
+} from 'mongodb';
 import cors from 'cors';
 import express from 'express';
 const app = express();
 const port = 3000;
 
-
-
-
 app.use(cors());
 app.use(express.json());
 
-
 const uri = process.env.MONGO_URI;
-
-
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -34,7 +32,7 @@ async function run() {
     const petServices = database.collection('services')
 
 
-// Services saved to database 
+    // Services saved to database 
 
     app.post('/services', async (req, res) => {
       const data = req.body;
@@ -47,30 +45,69 @@ async function run() {
 
     });
 
-//  Services got from database
-    app.get('/services', async (req, res) =>{
-      const result = await petServices.find().toArray();
+    //  Services got from database
+    app.get('/services', async (req, res) => {
+      const {category} = req.query;    
+      const query ={}
+      if(category){
+        query.category = category
+      }
+      const result = await petServices.find(query).toArray();
       res.send(result)
     })
 
-    app.get('/services/:id', async(req, res) =>{
+    app.get('/services/:id', async (req, res) => {
       const id = req.params
-      console.log(id);
 
-      const query = {_id: new ObjectId(id)}
+      const query = {
+        _id: new ObjectId(id)
+      }
       const result = await petServices.findOne(query)
       res.send(result)
-      
+
     })
 
-    app.get('/my-services',async(req,res) =>{
-      const {email} = req.query
-       const query = {email: email}
-       const result = await petServices.find(query).toArray()
-       res.send(result)
-      
+    app.get('/my-services', async (req, res) => {
+      const {
+        email
+      } = req.query
+      const query = {
+        email: email,
+      }
+      const result = await petServices.find(query).toArray()
+      res.send(result)
+    })
 
-    } )
+
+    // Edit button
+    app.put('/update/:id', async (req, res) => {
+      const data = req.body;
+      const id = req.params;
+      const query = {
+        _id: new ObjectId(id)
+      }
+
+      const updateServices = {
+        $set: data
+      }
+
+      const result = await petServices.updateOne(query, updateServices)
+      res.send(result)
+
+    })
+
+
+    // delete button
+    app.delete("/delete/:id", async (req, res) => {
+      const id = req.params;
+      const query = {_id: new ObjectId(id)}
+      const result = await petServices.deleteOne(query)
+      res.send(result)
+    })
+
+
+
+
 
 
     await client.db("admin").command({
