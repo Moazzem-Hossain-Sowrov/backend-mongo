@@ -1,22 +1,22 @@
-
+import dotenv from 'dotenv';
+dotenv.config();
 // mongodb connection 
-const {
-  MongoClient,
-  ServerApiVersion,
-  ObjectId
-} = require('mongodb');
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+import { MongoClient, ServerApiVersion, ObjectId } from 'mongodb';
+import cors from 'cors';
+import express from 'express';
+const app = express();
 const port = 3000;
 
 
-const app = express();
+
+
 app.use(cors());
-app.use(express.json())
+app.use(express.json());
 
 
-const uri = "mongodb+srv://User:JpjWmyjdHwnP29m6@cluster0.k2one53.mongodb.net/?appName=Cluster0";
+const uri = process.env.MONGO_URI;
+
+
 
 const client = new MongoClient(uri, {
   serverApi: {
