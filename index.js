@@ -47,9 +47,11 @@ async function run() {
 
     //  Services got from database
     app.get('/services', async (req, res) => {
-      const {category} = req.query;    
-      const query ={}
-      if(category){
+      const {
+        category
+      } = req.query;
+      const query = {}
+      if (category) {
         query.category = category
       }
       const result = await petServices.find(query).toArray();
@@ -100,16 +102,20 @@ async function run() {
     // delete button
     app.delete("/delete/:id", async (req, res) => {
       const id = req.params;
-      const query = {_id: new ObjectId(id)}
+      const query = {
+        _id: new ObjectId(id)
+      }
       const result = await petServices.deleteOne(query)
       res.send(result)
     })
 
 
+    
 
 
 
 
+    // mongodb
     await client.db("admin").command({
       ping: 1
     });
