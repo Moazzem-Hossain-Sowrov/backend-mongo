@@ -39,8 +39,6 @@ async function run() {
       const data = req.body;
       const date = new Date();
       data.createdAt = date;
-
-      console.log("Received:", data);
       const result = await petServices.insertOne(data);
       res.send(result)
 
@@ -67,7 +65,6 @@ async function run() {
       }
       const result = await petServices.findOne(query)
       res.send(result)
-
     })
 
     app.get('/my-services', async (req, res) => {
@@ -80,7 +77,6 @@ async function run() {
       const result = await petServices.find(query).toArray()
       res.send(result)
     })
-
 
     // Edit button
     app.put('/update/:id', async (req, res) => {
@@ -98,7 +94,6 @@ async function run() {
       res.send(result)
 
     })
-
 
     // delete button
     app.delete("/delete/:id", async (req, res) => {
@@ -119,7 +114,7 @@ async function run() {
       
     })
 
-    app.get ('/order', async(req,res) =>{
+    app.get ('/orders', async(req,res) =>{
       const result = await orderCollections.find().toArray()
       res.status(200).send(result)
     })
