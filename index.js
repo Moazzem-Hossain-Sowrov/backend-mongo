@@ -29,7 +29,8 @@ async function run() {
     await client.connect();
 
     const database = client.db('petService');
-    const petServices = database.collection('services')
+    const petServices = database.collection('services');
+    const orderCollections = database.collection('orders');
 
 
     // Services saved to database 
@@ -110,7 +111,18 @@ async function run() {
     })
 
 
-    
+    app.post('/orders', async(req, res)=>{
+      const data = req.body
+      console.log(data);
+      const result = await orderCollections.insertOne(data)
+      res.status(201).send(result)
+      
+    })
+
+    app.get ('/order', async(req,res) =>{
+      const result = await orderCollections.find().toArray()
+      res.status(200).send(result)
+    })
 
 
 
