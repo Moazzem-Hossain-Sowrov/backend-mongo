@@ -1,6 +1,14 @@
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+
+dotenv.config({ path: join(__dirname, '.env') });
+
 // mongodb connection 
 import {
   MongoClient,
@@ -15,7 +23,8 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
-const uri = process.env.MONGO_URI;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.k2one53.mongodb.net/?appName=Cluster0`;
+
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -25,42 +34,60 @@ const client = new MongoClient(uri, {
   }
 });
 
-// Connect to MongoDB
 let isConnected = false;
 let database, petServices, orderCollections;
+let connectionPromise = null;
 
 async function connectDB() {
-  if (isConnected) {
+
+  if (isConnected && client.topology && client.topology.isConnected()) {
     return { database, petServices, orderCollections };
   }
   
-  try {
-    await client.connect();
-    isConnected = true;
-    database = client.db('petService');
-    petServices = database.collection('services');
-    orderCollections = database.collection('orders');
-    
-    await client.db("admin").command({ping: 1});
-    console.log("Successfully connected to MongoDB!");
-    
-    return { database, petServices, orderCollections };
-  } catch (error) {
-    console.error("MongoDB connection error:", error);
-    isConnected = false;
-    throw error;
+  
+  if (connectionPromise) {
+    return connectionPromise;
   }
+  
+  
+  connectionPromise = (async () => {
+    try {
+      // await client.connect();
+      // await client.db("admin").command({ ping: 1 });
+      console.log("Successfully connected to MongoDB!");
+      
+      isConnected = true;
+      database = client.db('petService');
+      petServices = database.collection('services');
+      orderCollections = database.collection('orders');
+      
+      connectionPromise = null;
+      return { database, petServices, orderCollections };
+    } catch (error) {
+      console.error("MongoDB connection error:", error);
+      isConnected = false;
+      connectionPromise = null;
+      throw error;
+    }
+  })();
+  
+  return connectionPromise;
 }
 
-// Initialize connection
+
 connectDB().catch(console.dir);
 
-// Define routes
+
 async function getCollections() {
-  if (!isConnected) {
-    await connectDB();
+  try {
+    if (!uri) {
+      throw new Error("MONGO_URI is not configured");
+    }
+    return await connectDB();
+  } catch (error) {
+    console.error("Failed to get collections:", error);
+    throw error;
   }
-  return { petServices, orderCollections };
 }
 
 
@@ -79,7 +106,7 @@ app.post('/services', async (req, res) => {
 
 });
 
-//  Services got from database
+
 app.get('/services', async (req, res) => {
   try {
     const { petServices } = await getCollections();
@@ -91,10 +118,11 @@ app.get('/services', async (req, res) => {
       query.category = category
     }
     const result = await petServices.find(query).toArray();
+    console.log(`Fetched ${result.length} services from MongoDB`);
     res.send(result)
   } catch (error) {
     console.error('Error fetching services:', error);
-    res.status(500).send({ error: 'Failed to fetch services' });
+    res.status(500).send({ error: 'Failed to fetch services', details: error.message });
   }
 })
 
@@ -202,19 +230,23 @@ app.get ('/orders', async(req,res) =>{
   }
 })
 
-//  Not required
+
 app.get('/', (req, res) => {
-  res.send('Hello, Developers')
+  res.send({
+    message: 'Hello, Developers',
+    mongoUri: uri ? 'Configured' : 'NOT CONFIGURED',
+    connected: isConnected
+  })
 })
 // 
 
-// Only start server if not in serverless environment (Vercel)
+
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   app.listen(port, () => {
     console.log(`server is running on ${port}`);
   })
 }
 
-// Export app for Vercel
+
 export default app;
 
